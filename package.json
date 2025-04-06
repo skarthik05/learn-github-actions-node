@@ -1,0 +1,16 @@
+{
+  "name": "learn-github-actions-node",
+  "version": "1.0.0",
+  "description": "Simple Node.js app for testing GitHub Actions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest",
+    "build": "echo \"📦 Building app...\""
+  },
+  "author": "Karthik",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
