@@ -1,24 +1,65 @@
-name: Deploy to EC2 with Docker
+# name: Deploy to EC2 with Docker
+
+# on:
+#   push:
+#     branches: [main]
+
+# jobs:
+#   deploy:
+#     runs-on: self-hosted
+
+#     steps:
+#       - name: Checkout source
+#         uses: actions/checkout@v4
+
+#       - name: Stop existing container (if any)
+#         run: |
+#           docker stop node-app || true
+#           docker rm node-app || true
+
+#       - name: Build Docker image
+#         run: docker build -t node-app .
+
+#       - name: Run Docker container
+#         run: docker run -d -p 80:3000 --name node-app node-app
+
+name: Deploy to EC2
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: karthiks05/node-github-action
+  IMAGE_TAG: latest
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Stop existing container (if any)
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build and Push Docker image
         run: |
-          docker stop node-app || true
-          docker rm node-app || true
+          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+          docker push $IMAGE_NAME:$IMAGE_TAG
 
-      - name: Build Docker image
-        run: docker build -t node-app .
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_KEY }}
 
-      - name: Run Docker container
-        run: docker run -d -p 80:3000 --name node-app node-app
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            docker pull $IMAGE_NAME:$IMAGE_TAG
+            docker stop node-github-action || true
+            docker rm node-github-action || true
+            docker run -d --pull=always -p 80:3000 --name node-github-action $IMAGE_NAME:$IMAGE_TAG
+          EOF
