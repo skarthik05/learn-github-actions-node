@@ -7,6 +7,9 @@ app.get("/", (req, res) => {
     .status(200)
     .send("Welcome to the Dummy Server!. Testing the CI/CD pipeline.");
 });
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
 
 app.get("/hello", (req, res) => {
   res
